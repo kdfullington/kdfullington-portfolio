@@ -1,45 +1,56 @@
 import requests
+import pandas as pd
+# Read spreadsheet of cities and states into data frame
+df = pd.read_csv('C:/Users/runek/DSC680/Portfolio/Weather Lookup/uscities.csv')
+# Change text in data frame to lowercase
+df = df.map(lambda x: x.lower() if isinstance(x, str) else x)
+# Instantiate a list of US cities
+list_of_us_cities = list(df.city)
+# Instantiate a list of US states
+list_of_us_states = list(df.state_id)
 
 
-def get_city():
+
+def is_city_in_state(city_name, state_name, df):
+    city_row = df[(df['city'].str.lower() == city_name) & (df['state_id'].str.lower() == state_name)]
+    return not city_row.empty
+# This function validates whether the city entered by the user is in the state that they entered (given that both city and state are valid inputs)
+
+def get_city(list_of_us_cities, list_of_us_states):
     while True:
-        city_name = input("Please enter the name of the city you wish to look up: ").upper()
-        if all(x.isalpha() or x.isspace() for x in city_name):
-            return city_name
+        city_name = input("Please enter the name of the city you wish to look up (press 'x' to exit the program): ").strip().lower()
+
+        if city_name.lower() == 'x':
+            print("You have typed 'x'. Exiting the program.")
+            exit()
+        elif city_name not in list_of_us_cities:
+            print("You have not typed in a valid US city name. Please try again. ")
+        elif not city_name.replace(" ", "").isalpha():
+            print("Invalid input. Enter letters and spaces only - no numbers or punctuation. Please try again or type x to exit. ")
         else:
-            print("Invalid input. Please enter letters and spaces only - no numbers or punctuation.")
-
-
-# this function retrieves the city name from the user in a loop - it makes sure that the only characters are alphabetical or a space (to cover cities such as New York)
-# the else section catches any other characters (punctuation, numbers, mixes of all, etc), prints an error and starts over
-
-
-def get_state():
-    while True:
-        state_name = input("Please enter the abbreviation for the state the city is in (2 letters): ").upper()
-        if not state_name.isalpha():
-            print("Invalid input. Please enter only alphabetic characters.")
-        elif len(state_name) != 2:
-            print("You have entered more than 2 characters. Please try again.")
-        else:
-            return state_name
-
-
-# this function retrieves the state name from the user ina  loop - it first checks if the input is alphabetic. If not, it prints an error and starts the loop over
-# then it checks to see if the length of the alphabetic characters is 2 - if not, it prints an error and starts the loop over
-# if the input is two alphabetic characters, it returns the input as the state name
+            state_name = input("Please enter the abbreviation for the state the city is in (2 letters): ").strip().lower()
+            if state_name not in list_of_us_states:
+                print("Invalid state abbreviation. Please try again.")
+            elif not is_city_in_state(city_name, state_name, df):
+                print(f"The city {city_name.title()} is not in the state {state_name.upper()}. Please try again.")
+            else:
+                return city_name, state_name
+# This function allows the user to input the city name. If the city name is not valid (no match in the US city list, non-alphabetic characters, etc.) print error and ask user to input again.
+# The same occurs when the user inputs the state name.
 
 def get_zip():
     while True:
-        zip_code = input("Please enter the United States zip code of the place you wish to look up: ")
+        zip_code = input("Please enter the United States zip code of the place you wish to look up (type 'x' to exit the program): ")
+
+        if zip_code == 'x':
+            print("You have typed 'x'. Exiting the program.")
+            exit()
         if len(zip_code) != 5:
             print("Invalid zip code. Please enter a zip code with five digits. No letters or punctuation.")
         elif zip_code.isnumeric() is True:
             return zip_code
         else:
             print("Invalid input. Please enter a zip code with five digits. No letters or punctuation.")
-
-
 # this function retrieves the zip code from the user in a loop - it first checks to see if the length of the zip code is five - if not, it prints an error and starts the loop over
 # then, it checks to see if the five characters are numbers - if so, it returns the numbers as the zip code
 # the else function catches any punctuation that might have been entered
@@ -163,12 +174,12 @@ def get_weather_city(city_name, city_weather, state_name):
     pressure_city = city_weather['main']['pressure']
     humidity_city = city_weather['main']['humidity']
     wind_speed_city = city_weather['wind']['speed']
-    wind_gust_city = city_weather['wind']['gust']
+    # wind_gust_city = city_weather['wind']['gust']
     decide_temp(current_temp, min_temp, max_temp, feels_like_temp)
     print("Cloud Cover: ", cloud_cover_city)
     print("Humidity: ", humidity_city, "%")
     print("Wind Speed: ", wind_speed_city, "mph")
-    print("Wind Gusts: ", wind_gust_city, "mph")
+    # print("Wind Gusts: ", wind_gust_city, "mph")
     print("Pressure: ", pressure_city, "atm")
 
 # the function get_weather_city takes the information from the get_city, get_state, and call_city_weather functions to print out the weather in a readable format for the user
@@ -184,20 +195,20 @@ def get_weather_zip(zip_weather, zip_code):
     pressure_zip = zip_weather['main']['pressure']
     humidity_zip = zip_weather['main']['humidity']
     wind_speed_zip = zip_weather['wind']['speed']
-    wind_gust_zip = zip_weather['wind']['gust']
+    # wind_gust_zip = zip_weather['wind']['gust']
     print("Here is the weather for", zip_code, ": ")
     decide_temp(current_temp, min_temp, max_temp, feels_like_temp)
     print("Cloud Cover: ", cloud_cover_zip)
     print("Humidity: ", humidity_zip, "%")
     print("Wind Speed: ", wind_speed_zip, "mph")
-    print("Wind Gusts: ", wind_gust_zip, "mph")
+    # print("Wind Gusts: ", wind_gust_zip, "mph")
     print("Pressure: ", pressure_zip, "atm")
 
 # the function get_weather_city takes the information from the get_zip and call_zip_weather functions to print out the weather in a readable format for the user
 # it reads the json file (named zip_weather) and variables are created for cloud cover and so on, which are then printed
 
 
-def main():
+def main(): 
     print(
         "Welcome to United States Weather Lookup! You can look up the weather anywhere in the United States - let's begin!")
     while True:
@@ -205,13 +216,13 @@ def main():
             user_selection = input(
                 "Would you like to look up the weather by city or zip code? Enter 'c' for city or 'z' for zip code. Enter 'x' to exit. ")
             if user_selection.isalpha() is False:
-                print("Invalid input. Please enter 'c' for city or 'z' for zip code. Enter 'x' to exit. ")
+                print("Invalid input. Only letters are accepted. Please enter 'c' for city or 'z' for zip code. Enter 'x' to exit. ")
         except ValueError:
             print("Invalid input. Please enter 'c' for city or 'z' for zip code. Enter 'x' to exit. ")
         else:
             if user_selection.lower() == 'c':
-                city_name = get_city()
-                state_name = get_state()
+                city_name, state_name = get_city(list_of_us_cities, list_of_us_states)
+                is_city_in_state(city_name, state_name, df)
                 call_city_weather(city_name, state_name)
                 city_weather = call_city_weather(city_name, state_name)
                 get_weather_city(city_name, city_weather, state_name)
